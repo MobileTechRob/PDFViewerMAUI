@@ -1,0 +1,11 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/PDFViewerMAUI/.vs
+/PDFViewerMAUI/PDFUtility/bin/Release
+/PDFViewerMAUI/PDFUtility/obj
+/PDFViewerMAUI/PDFViewerMAUI/bin
+/PDFViewerMAUI/PDFViewerMAUI/obj
+/PDFViewerMAUI/PDFViewerUnitTests
+/PDFViewerMAUI/vecteezy_pdf-file-icon-flat-design-graphic-illustration-vector
