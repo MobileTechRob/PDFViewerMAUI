@@ -1,0 +1,99 @@
+﻿@using PDFViewerMAUI.Managers;
+@using PDFViewerMAUI.DataModels;
+@inject NavigationManager NavigationManager
+
+@page "/TicketInfoPreview"
+
+<h2>Ticket Preview</h2>
+
+<h3>Ticket 1</h3>
+<div style="border: 1px solid #000000; padding:4px;">
+    <h3>Event Name</h3>
+    <InputTextArea @bind-Value="@EventName1" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Event Venue</h3>
+    <InputTextArea @bind-Value="@EventVenue1" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Event Location</h3>
+    <InputTextArea @bind-Value="@EventLocation1" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Event Date</h3>
+    <InputTextArea @bind-Value="@EventDate1" Style="width:100%;height:25px;word-wrap:normal;" />
+</div>
+<br />
+<h3>Ticket 2</h3>
+<div style="border: 1px solid #000000; padding:4px;">
+    <h3>Event Name</h3>
+    <InputTextArea @bind-Value="@EventName2" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Event Venue</h3>
+    <InputTextArea @bind-Value="@EventVenue2" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Event Location</h3>
+    <InputTextArea @bind-Value="@EventLocation2" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Event Date</h3>
+    <InputTextArea @bind-Value="@EventDate2" Style="width:100%;height:25px;word-wrap:normal;" />
+</div>
+<br />
+<Button Color="ButtonColor.Danger" @onclick="()=>SaveTicketInformation()">Save Ticket Information</Button>
+
+@code 
+{
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventName1 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventVenue1 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventLocation1 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventDate1 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string PdfFileToDisplay1 { get; set; }
+
+ 
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventName2 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventVenue2 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventLocation2 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string EventDate2 { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string PdfFileToDisplay2 { get; set; }
+
+    public void SaveTicketInformation()
+    {
+        TicketManager ticketManager = new TicketManager();
+
+        ticketManager.LoadTickets();
+        PDFDocumentDetails ticket = null;
+
+        ticket = new PDFDocumentDetails(EventName1, EventVenue1, EventLocation1, DateTime.Parse(EventDate1), PdfFileToDisplay1);
+        ticketManager.AddTicket(ticket);
+
+        if (!String.IsNullOrEmpty(EventName2))
+        {
+            ticket = new PDFDocumentDetails(EventName2, EventVenue2, EventLocation2, DateTime.Parse(EventDate2), PdfFileToDisplay2);
+            ticketManager.AddTicket(ticket);        
+        }
+
+        ticketManager.SaveTicket();
+
+
+        NavigationManager.NavigateTo("/");
+    }
+}

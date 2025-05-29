@@ -1,0 +1,161 @@
+﻿@page "/"
+@using PDFViewerMAUI.DataModels;
+@using PDFViewerMAUI.Managers;
+@using Newtonsoft.Json;
+@using PDFViewerMAUI.Utility;
+@using System.Text;
+@inject NavigationManager NavigationManager;
+
+
+<h2>Document List</h2>
+<h2>@logging</h2>
+<h2>@errorLineOne</h2>
+<h2>@errorLineTwo</h2>
+
+<ul class="smartphone">
+    @foreach (var ticket in tickets)
+    {
+        <li><NavLink href="@($"PDFViewer?PdfFileToDisplay={ticket.PDFFileName}")">@ticket.TicketInfo</NavLink></li>
+    }
+</ul>
+
+<table class="smartphone">
+    <tr><td><Button Color="ButtonColor.Danger" @onclick="() =>LoadPDFPicker()">Select PDF</Button></td>
+        <td><Button Color="ButtonColor.Danger" @onclick="() =>ClearFiles()">Clear Files</Button></td></tr>
+</table>
+
+@code {
+
+    List<PDFDocumentDetails> tickets = new();
+    TicketManager ticketManager = new();
+    string userSelectedFile;
+    string dateTime = "";
+    string loaded = "";
+    string logging = "";
+    string errorLineOne = "";
+    string errorLineTwo = "";
+    string render = "";
+    bool shouldRender = false;
+
+    private const string PdfBase64 = "JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDEvTWVkaWFCb3ggWy00MCAtNjQgMjYwIDgwXSA+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjE8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9BcmlhbD4+ID4+ID4+L0NvbnRlbnRzIDQgMCBSPj5lbmRvYmoKNCAwIG9iajw8L0xlbmd0aCA1OT4+CnN0cmVhbQpCVAovRjEgMTggVGYKMCAwIFRkCihUZWxlcmlrIFBkZlZpZXdlciBmb3IgQmxhem9yKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA1CjAwMDAwMDAwMDAgNjU1MzUgZgowMDAwMDAwMDIxIDAwMDAwIG4KMDAwMDAwMDA4NiAwMDAwMCBuCjAwMDAwMDAxOTUgMDAwMDAgbgowMDAwMDAwNDkwIDAwMDAwIG4KdHJhaWxlciA8PCAgL1Jvb3QgMSAwIFIgL1NpemUgNSA+PgpzdGFydHhyZWYKNjA5CiUlRU9G";
+
+    protected override void OnInitialized()
+    {
+        try
+        {
+            ticketManager.LoadTickets();
+            tickets = ticketManager.Tickets();
+
+            base.OnInitialized();
+        }
+        catch (Exception ex)
+        {
+
+        }
+    }
+
+    private async Task ClearFiles()
+    {
+        ticketManager.DeleteTickets();
+        shouldRender = true;
+    }
+
+    private async Task LoadPDFPicker()
+    {
+        LoadFilePicker("Pdf");
+    }
+
+    private async Task LoadTicketPicker()
+    {
+        LoadFilePicker("Ticket");
+    }
+
+    private async Task LoadFilePicker(string documentType)
+    {
+        FileResult? selectedFile;
+
+        try
+        {
+            selectedFile = await FilePicker.Default.PickAsync();
+            if (selectedFile != null)
+            {
+                if (selectedFile.FileName.EndsWith("pdf", StringComparison.OrdinalIgnoreCase))
+                {                   
+                    string userSelectedFile = selectedFile.FullPath;
+
+                    if (userSelectedFile.Contains("#"))
+                    {
+                        userSelectedFile = userSelectedFile.Replace("#", "").Replace(" ","");
+                        File.Copy(selectedFile.FullPath, userSelectedFile);
+                    }
+
+                    ProcessFile(userSelectedFile, documentType);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            // The user canceled or something went wrong
+        }        
+    }
+
+    private void ProcessFile(string userSelectedFile, string documentType)
+    {        
+        int count;
+        string directory;
+        List<string> filesCreated;
+        string errorMessage="";
+
+        PDFViewerMAUI.Utility.PDFSplitter.Main(userSelectedFile, out count, out directory, out filesCreated);
+
+        PDFParser pDFParser = new PDFParser();
+
+        ticketManager.LoadTickets();
+
+        MyPDFDocumentType myPDFDocumentType = pDFParser.ExamineDocuments(filesCreated, ref errorMessage);
+
+        errorLineOne = "";
+        errorLineTwo = "";
+
+        if (!String.IsNullOrEmpty(errorMessage))
+        {
+            errorLineOne = "Error importing ";  
+            errorLineTwo = userSelectedFile;
+        }
+        else if (myPDFDocumentType == MyPDFDocumentType.GeneralDocument)
+            NavigationManager.NavigateTo($"DocumentInfoPreview?PdfFileToDisplay={filesCreated[0]}");
+        else
+        {
+            StringBuilder urlParameters = new StringBuilder();
+
+            foreach (PDFDocumentDetails pDFDocumentDetails in pDFParser.DocumentList())
+            {
+                if (urlParameters.Length == 0)
+                    urlParameters.Append($"?EventName1={pDFDocumentDetails.Event}&EventVenue1={pDFDocumentDetails.Venue}&EventDate1={pDFDocumentDetails.EventDateTime}&PdfFileToDisplay1={pDFDocumentDetails.PDFFileName}");
+                else
+                    urlParameters.Append($"&EventName2={pDFDocumentDetails.Event}&EventVenue2={pDFDocumentDetails.Venue}&EventDate2={pDFDocumentDetails.EventDateTime}&PdfFileToDisplay2={pDFDocumentDetails.PDFFileName}");
+            }
+
+            //string urlToNavigateTo = urlParameters.ToString();
+            NavigationManager.NavigateTo($"TicketInfoPreview{urlParameters.ToString()}");
+        }
+        
+        shouldRender = true;
+    }
+
+    protected override bool ShouldRender()
+    {
+        //render = "ShouldRender()=" + shouldRender.ToString();
+
+        if (shouldRender == true)
+        {            
+            ticketManager.LoadTickets();
+            tickets = ticketManager.Tickets();
+
+            shouldRender = false;
+            return true;
+        }
+        
+        return base.ShouldRender();
+    }
+}

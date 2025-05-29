@@ -1,0 +1,63 @@
+﻿
+@page "/PDFViewer"
+@using Telerik.Blazor.Components;
+
+<h2>@errorLog</h2>
+
+<TelerikPdfViewer Data="@PdfSource" @OnError="OnPDFLoadError" Height="600px">
+    <PdfViewerToolBar>
+    </PdfViewerToolBar>
+</TelerikPdfViewer>
+
+@code {
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string pdfFileToDisplay { get; set; }
+
+    private byte[] PdfSource { get; set; }
+
+    private string fileName { get; set; }
+    private string errorLog { get; set; }
+    private string errorLog2 { get; set; }
+
+    protected override async void OnInitialized()
+    {
+        try
+        {
+            FileStream file = File.Open(pdfFileToDisplay,FileMode.Open);
+            // Get the PDF file contents if necessary.
+
+            if (file.Length <= 1024 * 1024)
+            {
+                byte[] buffer = new byte[file.Length];
+                await file.ReadAsync(buffer);               
+                PdfSource = buffer;
+            }
+            else
+            {            
+                fileName = Path.GetFileName(pdfFileToDisplay);
+                errorLog = $"Could not load {fileName}";
+            }
+
+            file.Close();
+
+            //System.IO.File.ReadAllBytes(pdfFileToDisplay);
+            //file = Path.GetFileName(pdfFileToDisplay);
+            base.OnInitialized();
+        }
+        catch (Exception ex)
+        {
+            errorLog = "Exception is " + ex.Message;
+            errorLog2 = fileName; 
+        }
+    }
+
+    private async Task OnPDFLoadError(PdfViewerErrorEventArgs args)
+    {
+        fileName = Path.GetFileName(pdfFileToDisplay);
+        errorLog = $"Could not load {fileName}";
+    }
+
+    private const string PdfBase64 = "JVBERi0xLjEKMSAwIG9iajw8L1R5cGUvQ2F0YWxvZy9QYWdlcyAyIDAgUj4+ZW5kb2JqCjIgMCBvYmo8PC9UeXBlL1BhZ2VzL0tpZHNbMyAwIFJdL0NvdW50IDEvTWVkaWFCb3ggWy00MCAtNjQgMjYwIDgwXSA+PmVuZG9iagozIDAgb2JqPDwvVHlwZS9QYWdlL1BhcmVudCAyIDAgUi9SZXNvdXJjZXM8PC9Gb250PDwvRjE8PC9UeXBlL0ZvbnQvU3VidHlwZS9UeXBlMS9CYXNlRm9udC9BcmlhbD4+ID4+ID4+L0NvbnRlbnRzIDQgMCBSPj5lbmRvYmoKNCAwIG9iajw8L0xlbmd0aCA1OT4+CnN0cmVhbQpCVAovRjEgMTggVGYKMCAwIFRkCihUZWxlcmlrIFBkZlZpZXdlciBmb3IgQmxhem9yKSBUagpFVAplbmRzdHJlYW0KZW5kb2JqCnhyZWYKMCA1CjAwMDAwMDAwMDAgNjU1MzUgZgowMDAwMDAwMDIxIDAwMDAwIG4KMDAwMDAwMDA4NiAwMDAwMCBuCjAwMDAwMDAxOTUgMDAwMDAgbgowMDAwMDAwNDkwIDAwMDAwIG4KdHJhaWxlciA8PCAgL1Jvb3QgMSAwIFIgL1NpemUgNSA+PgpzdGFydHhyZWYKNjA5CiUlRU9G";
+}

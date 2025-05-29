@@ -1,0 +1,47 @@
+﻿@using PDFViewerMAUI.Managers;
+@using PDFViewerMAUI.DataModels;
+@inject NavigationManager NavigationManager;
+
+@page "/DocumentInfoPreview"
+
+<h2>Document Information</h2>
+<div style="border: 1px solid #000000; padding:4px;">
+    <h3>Description</h3>
+    <InputTextArea @bind-Value="@DocumentDescription" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Location</h3>
+    <InputTextArea @bind-Value="@DocumentLocation" Style="width:100%;height:25px;word-wrap:normal;" />
+    <h3>Date</h3>
+    <InputDate @bind-Value="@DocumentDate" Style="width:100%;height:25px;word-wrap:normal;" />
+</div>
+<br />
+<Button Color="ButtonColor.Danger" @onclick="() =>SaveTicketInformation()">Save Document Information</Button>
+
+@code 
+{
+    public string DocumentDescription { get; set; }
+    public string DocumentLocation { get; set; }
+    public DateTime DocumentDate { get; set; }
+
+    [Parameter]
+    [SupplyParameterFromQuery]
+    public string PdfFileToDisplay { get; set; }
+
+    protected override void OnInitialized()
+    {
+        DocumentDate = DateTime.Now;
+        base.OnInitialized();
+    }
+
+    public void SaveTicketInformation()
+    {
+        TicketManager ticketManager = new TicketManager();
+
+        ticketManager.LoadTickets();
+        PDFDocumentDetails ticket = new PDFDocumentDetails(DocumentDescription, DocumentLocation, DocumentDate, PdfFileToDisplay);
+
+        ticketManager.AddTicket(ticket);
+        ticketManager.SaveTicket();
+
+        NavigationManager.NavigateTo("/");
+    }
+}
